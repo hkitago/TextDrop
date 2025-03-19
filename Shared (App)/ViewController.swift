@@ -20,62 +20,84 @@ let extensionBundleIdentifier = "com.hkitago.TextDrop.Extension"
 
 class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMessageHandler {
 
-    @IBOutlet var webView: WKWebView!
+  @IBOutlet var webView: WKWebView!
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+  override func viewDidLoad() {
+      super.viewDidLoad()
 
-        self.webView.navigationDelegate = self
-
-#if os(iOS)
-        self.webView.scrollView.isScrollEnabled = false
-#endif
-
-        self.webView.configuration.userContentController.add(self, name: "controller")
-
-        self.webView.loadFileURL(Bundle.main.url(forResource: "Main", withExtension: "html")!, allowingReadAccessTo: Bundle.main.resourceURL!)
-    }
-
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-#if os(iOS)
-        webView.evaluateJavaScript("show('ios')")
-#elseif os(macOS)
-        webView.evaluateJavaScript("show('mac')")
-
-        SFSafariExtensionManager.getStateOfSafariExtension(withIdentifier: extensionBundleIdentifier) { (state, error) in
-            guard let state = state, error == nil else {
-                // Insert code to inform the user that something went wrong.
-                return
-            }
-
-            DispatchQueue.main.async {
-                if #available(macOS 13, *) {
-                    webView.evaluateJavaScript("show('mac', \(state.isEnabled), true)")
-                } else {
-                    webView.evaluateJavaScript("show('mac', \(state.isEnabled), false)")
-                }
-            }
-        }
-#endif
-    }
-
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
 #if os(macOS)
-        if (message.body as! String != "open-preferences") {
-            return
-        }
+    webView.setValue(false, forKey: "drawsBackground")
+    webView.setValue(NSColor.clear, forKey: "backgroundColor")
+#endif
 
+      self.webView.navigationDelegate = self
+
+#if os(iOS)
+      self.webView.scrollView.isScrollEnabled = false
+#endif
+
+      self.webView.configuration.userContentController.add(self, name: "controller")
+
+      self.webView.loadFileURL(Bundle.main.url(forResource: "Main", withExtension: "html")!, allowingReadAccessTo: Bundle.main.resourceURL!)
+  }
+
+  func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+#if os(iOS)
+      webView.evaluateJavaScript("show('ios')")
+#elseif os(macOS)
+      webView.evaluateJavaScript("show('mac')")
+
+      SFSafariExtensionManager.getStateOfSafariExtension(withIdentifier: extensionBundleIdentifier) { (state, error) in
+          guard let state = state, error == nil else {
+              // Insert code to inform the user that something went wrong.
+              return
+          }
+
+          DispatchQueue.main.async {
+              if #available(macOS 13, *) {
+                  webView.evaluateJavaScript("show('mac', \(state.isEnabled), true)")
+              } else {
+                  webView.evaluateJavaScript("show('mac', \(state.isEnabled), false)")
+              }
+          }
+      }
+#endif
+  }
+
+func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+    let messageBody = message.body as! String
+    var url: URL?
+
+    if messageBody == "open-support" {
+        url = URL(string: "https://github.com/hkitago/ColorMark/")
+    }
+
+#if os(macOS)
+    if messageBody == "open-preferences" {
         SFSafariApplication.showPreferencesForExtension(withIdentifier: extensionBundleIdentifier) { error in
             guard error == nil else {
-                // Insert code to inform the user that something went wrong.
                 return
             }
-
             DispatchQueue.main.async {
                 NSApp.terminate(self)
             }
         }
-#endif
+        return
     }
+
+    if let validURL = url {
+        NSWorkspace.shared.open(validURL)
+    }
+
+#elseif os(iOS)
+    if messageBody == "open-settings" {
+        url = URL(string: UIApplication.openSettingsURLString)
+    }
+
+    if let validURL = url {
+        UIApplication.shared.open(validURL)
+    }
+#endif
+}
 
 }
