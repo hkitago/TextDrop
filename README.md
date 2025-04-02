@@ -26,7 +26,11 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 
 ### 1.0
 
-#### **macOS** - 2025-04-03
+#### **iOS/iPadOS** - 2025-04-02
+
+- Initial release with extended features from macOS version
+
+#### **macOS** - 2025-04-01
 
 - Initial release
 
