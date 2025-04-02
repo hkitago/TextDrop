@@ -26,5 +26,5 @@
         "default_icon": "images/toolbar-icon.svg"
     },
 
-    "permissions": [ "activeTab", "downloads", "contextMenus" ]
+    "permissions": [ "activeTab", "tabs", "contextMenus" ]
 }

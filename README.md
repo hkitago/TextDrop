@@ -26,6 +26,8 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 
 ### 1.0
 
+#### **macOS** - 2025-04-03
+
 - Initial release
 
 ## Compatibility
