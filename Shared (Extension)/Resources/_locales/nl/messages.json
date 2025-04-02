@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "TekstVal",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "Sla tekstinhoud van het web snel op als een bestand.",
+        "description": "Description of what the extension does."
+    }
+}

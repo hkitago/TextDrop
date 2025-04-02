@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "VănBảnRơi",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "Lưu nhanh nội dung văn bản từ web dưới dạng tệp.",
+        "description": "Description of what the extension does."
+    }
+}

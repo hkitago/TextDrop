@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "TexteChute",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "Enregistrez rapidement du contenu textuel du web sous forme de fichier.",
+        "description": "Description of what the extension does."
+    }
+}

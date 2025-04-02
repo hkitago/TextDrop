@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "TestoCaduta",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "Salva rapidamente il contenuto testuale dal web come file.",
+        "description": "Description of what the extension does."
+    }
+}

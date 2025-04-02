@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "MetinDüşüş",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "Web'den metin içeriğini hızlıca dosya olarak kaydedin.",
+        "description": "Description of what the extension does."
+    }
+}

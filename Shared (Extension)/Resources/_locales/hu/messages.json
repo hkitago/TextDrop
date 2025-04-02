@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "SzövegEsés",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "Gyorsan mentse a szöveges tartalmat a webről fájlként.",
+        "description": "Description of what the extension does."
+    }
+}

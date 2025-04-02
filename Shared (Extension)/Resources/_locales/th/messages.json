@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "ข้อความหล่น",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "บันทึกเนื้อหาข้อความจากเว็บเป็นไฟล์อย่างรวดเร็ว",
+        "description": "Description of what the extension does."
+    }
+}

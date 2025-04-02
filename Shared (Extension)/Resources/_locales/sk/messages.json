@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "TextPád",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "Rýchlo uložte textový obsah z webu ako súbor.",
+        "description": "Description of what the extension does."
+    }
+}

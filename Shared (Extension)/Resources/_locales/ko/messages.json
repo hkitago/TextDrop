@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "텍스트드롭",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "웹에서 텍스트 내용을 파일로 빠르게 저장합니다.",
+        "description": "Description of what the extension does."
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "テキストドロップ",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "ウェブからテキストコンテンツをファイルとして素早く保存します。",
+        "description": "Description of what the extension does."
+    }
+}

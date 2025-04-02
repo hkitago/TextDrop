@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "ТекстПадіння",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "Швидко зберігайте текстовий вміст з веб-сторінок як файл.",
+        "description": "Description of what the extension does."
+    }
+}
