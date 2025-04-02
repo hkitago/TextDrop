@@ -1,5 +1,15 @@
 import { getCurrentLangLabelString } from './localization.js';
 
+browser.runtime.onInstalled.addListener(async () => {
+  const tabs = await browser.tabs.query({});
+
+  for (const tab of tabs) {
+    if (tab.url.startsWith('http') || tab.url.startsWith('https')) {
+      await browser.tabs.reload(tab.id);
+    }
+  }
+});
+
 export const isMacOS = () => {
   const isPlatformMac = navigator.platform.toLowerCase().indexOf('mac') !== -1;
 
@@ -10,11 +20,17 @@ export const isMacOS = () => {
   return (isPlatformMac || isUserAgentMac) && !('ontouchend' in document);
 };
 
+const contentLabelStrings = {
+  'contentConfirm': `${getCurrentLangLabelString('contentConfirm')}`,
+  'onError': `${getCurrentLangLabelString('onError')}`
+};
+
 // Main action
 browser.action.onClicked.addListener((tab) => {
   browser.tabs.sendMessage(tab.id, {
     action: 'saveSelectedText',
-    name: `${getCurrentLangLabelString('contextMenu')}`
+    name: `${getCurrentLangLabelString('contextMenu')}`,
+    labelStrings: contentLabelStrings
   });
 });
 
@@ -30,7 +46,8 @@ if (isMacOS()) {
     if (info.menuItemId === 'selectionTextDrop' && info.selectionText) {
       browser.tabs.sendMessage(tab.id, {
         action: 'saveSelectedText',
-        name: `${getCurrentLangLabelString('contextMenu')}`
+        name: `${getCurrentLangLabelString('contextMenu')}`,
+        labelStrings: contentLabelStrings
       });
     }
   });
