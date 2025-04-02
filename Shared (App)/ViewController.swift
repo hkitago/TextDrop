@@ -69,7 +69,7 @@ func userContentController(_ userContentController: WKUserContentController, did
     var url: URL?
 
     if messageBody == "open-support" {
-        url = URL(string: "https://github.com/hkitago/ColorMark/")
+        url = URL(string: "https://github.com/hkitago/TextDrop/")
     }
 
 #if os(macOS)
