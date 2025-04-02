@@ -80,267 +80,181 @@
     return `${dateTime.year}${dateTime.month}${dateTime.day}${dateTime.hour}${dateTime.minute}${dateTime.second}`;
   };
 
-  // Thanks to Claude 3.7 Sonnet
-  const extractMainText = () => {
-    const docClone = document.cloneNode(true);
-    const bodyClone = docClone.body;
-    
-    const noiseSelectors = [
-      'nav', 'header', 'footer', '[role="navigation"]', '[role="banner"]', '[role="contentinfo"]',
-      'aside', '[role="complementary"]', '.sidebar', '.widget', '.advertisement', '.ad', '.ads',
-      'form', 'button', '.social', '.share', '.comments', '.comment-section',
-      '.hidden', '.invisible', '[aria-hidden="true"]', '.visually-hidden',
-      'script', 'style', 'noscript', 'iframe',
-      '.meta', '.metadata', '.author-info', '.published-date',
-      '.menu', '.submenu', '.search', '.breadcrumb', '.pagination', '.pager', '.related',
-      '.recommended', '.popular', '.trending', '.sponsored', '.advertisement',
-      '.cookie-notice', '.notification', '.alert', '.banner', '.popup', '.modal',
-      '.infobox', '.navbox', '.toc', '.hatnote', '.reference', '.references', '.reflist',
-      '.edit-link', '.noprint', '.printfooter', '.catlinks', '.authority-control',
-      '.breaking-news', '.most-read', '.newsletter-signup', '.subscription', '.paywall'
-    ];
-    
-    noiseSelectors.forEach(selector => {
-      try {
-        bodyClone.querySelectorAll(selector).forEach(el => el.remove());
-      } catch (e) {
-        // Ignore Error and Continue
-      }
-    });
-    
-    const scoreElement = (element) => {
-      if (!element || !element.textContent) return 0;
+  const findMainContent = () => {
+    const viewportHeight = window.innerHeight;
+    const tallContainers = Array.from(document.body.querySelectorAll('div, article, section, main, td'))
+      .map(el => {
+        const rect = el.getBoundingClientRect();
+        return {
+          element: el,
+          height: rect.height
+        };
+      })
+      .filter(item => item.height > viewportHeight * 0.5)
+      .sort((a, b) => b.height - a.height);
+
+    const evaluateContainer = (container) => {
+      const candidates = [];
       
-      const text = element.textContent.trim();
-      if (text.length < 50) return 0;
-      
-      let score = text.length;
-      
-      const paragraphs = element.querySelectorAll('p');
-      if (paragraphs.length > 0) {
-        score *= (1 + Math.min(1, paragraphs.length / 5));
+      const evaluateNode = (node, depth = 0) => {
+        if (depth > 5) return;
         
-        const longParagraphsCount = Array.from(paragraphs).filter(p => p.textContent.trim().length > 100).length;
-        if (longParagraphsCount > 0) {
-          score *= (1 + Math.min(1, longParagraphsCount / 3));
+        let textContent = '';
+        let textNodesCount = 0;
+        let meaningfulTextNodes = 0;
+        
+        const walkTextNodes = (element) => {
+          if (element.nodeType === Node.TEXT_NODE) {
+            const text = element.textContent.trim();
+            if (text.length > 0) {
+              textContent += text + ' ';
+              textNodesCount++;
+              if (text.length > 15) {
+                meaningfulTextNodes++;
+              }
+            }
+          } else if (element.nodeType === Node.ELEMENT_NODE) {
+            const tagName = element.tagName.toLowerCase();
+            if (['script', 'style', 'nav', 'header', 'footer'].includes(tagName)) {
+              return;
+            }
+            
+            // 子要素を処理
+            for (let i = 0; i < element.childNodes.length; i++) {
+              walkTextNodes(element.childNodes[i]);
+            }
+          }
+        };
+        
+        walkTextNodes(node);
+        
+        const directParagraphs = Array.from(node.children)
+          .filter(child => child.tagName.toLowerCase() === 'p' && child.textContent.trim().length > 30);
+          
+        let maxConsecutiveParagraphs = 0;
+        let currentConsecutive = 0;
+        
+        Array.from(node.children).forEach(child => {
+          if (child.tagName.toLowerCase() === 'p' && child.textContent.trim().length > 30) {
+            currentConsecutive++;
+            maxConsecutiveParagraphs = Math.max(maxConsecutiveParagraphs, currentConsecutive);
+          } else {
+            currentConsecutive = 0;
+          }
+        });
+        
+        const textDensity = textContent.length / (node.innerHTML.length || 1);
+        const textScore = textContent.length * 0.1;
+        const textNodesScore = meaningfulTextNodes * 10;
+        
+        const paragraphScore = directParagraphs.length * 15;
+        const consecutiveScore = maxConsecutiveParagraphs * 25;
+        
+        const totalScore = paragraphScore + consecutiveScore + textScore + textNodesScore;
+        
+        if (textContent.length > 100 || directParagraphs.length > 0) {
+          candidates.push({
+            element: node,
+            totalParagraphs: directParagraphs.length,
+            maxConsecutiveParagraphs,
+            textLength: textContent.length,
+            meaningfulTextNodes,
+            textDensity,
+            totalScore,
+            depth: getElementDepth(node)
+          });
         }
-      }
-      
-      const tagBonus = {
-        'article': 2.5,
-        'main': 2.0,
-        'section': 1.5,
-        'div': 1.0,
-        'p': 0.8
+        
+        Array.from(node.children).forEach(child => evaluateNode(child, depth + 1));
       };
       
-      const tagName = element.tagName.toLowerCase();
-      if (tagBonus[tagName]) {
-        score *= tagBonus[tagName];
-      }
-      
-      const contentKeywords = ['content', 'article', 'post', 'entry', 'main', 'body', 'text', 'story', 'news'];
-      const idLower = (element.id || '').toLowerCase();
-      const classLower = (element.className || '').toLowerCase();
-      
-      for (const keyword of contentKeywords) {
-        if (idLower.includes(keyword)) {
-          score *= 1.5;
-          break;
-        }
-      }
-      
-      for (const keyword of contentKeywords) {
-        if (classLower.includes(keyword)) {
-          score *= 1.3;
-          break;
-        }
-      }
-      
-      const roleAttr = element.getAttribute('role');
-      if (roleAttr === 'main' || roleAttr === 'article') {
-        score *= 1.8;
-      }
-      
-      const links = element.querySelectorAll('a');
-      const linkTextLength = Array.from(links).reduce((total, link) => total + (link.textContent || '').length, 0);
-      
-      if (text.length > 0) {
-        const linkDensity = linkTextLength / text.length;
-        if (linkDensity > 0.5) {
-          score *= (0.5 / linkDensity);
-        } else if (linkDensity > 0.2) {
-          score *= (1 - linkDensity);
-        }
-      }
-      
-      const headings = element.querySelectorAll('h1, h2, h3, h4, h5, h6');
-      if (headings.length > 0 && paragraphs.length > 0) {
-        const ratio = paragraphs.length / headings.length;
-        if (ratio >= 2 && ratio <= 10) {
-          score *= 1.2;
-        }
-      }
-      
-      const images = element.querySelectorAll('img');
-      if (images.length > 0 && images.length < paragraphs.length) {
-        score *= 1.1;
-      }
-      
-      let depth = 0;
-      let parent = element.parentElement;
-      while (parent) {
-        depth++;
-        parent = parent.parentElement;
-      }
-      score /= (1 + Math.max(0, depth - 5) * 0.1);
-      
-      return score;
+      evaluateNode(container.element);
+      return candidates;
     };
     
-    const potentialContainers = bodyClone.querySelectorAll('article, main, [role="main"], .article, .post, .content, #content, #main, section, .entry, .entry-content, div');
+    const getElementDepth = (element) => {
+      let depth = 0;
+      let current = element;
+      while (current !== document.body && current.parentElement) {
+        depth++;
+        current = current.parentElement;
+      }
+      return depth;
+    };
     
-    let scoredElements = Array.from(potentialContainers)
-      .filter(el => {
-        const text = el.textContent.trim();
-        return text.length > 150 && text.split(/\s+/).length > 30;
-      })
-      .map(el => ({
-        element: el,
-        score: scoreElement(el),
-        text: el.textContent.trim()
-      }))
-      .filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score);
+    let allCandidates = [];
+    tallContainers.forEach(container => {
+      const containerCandidates = evaluateContainer(container);
+      allCandidates.push(...containerCandidates);
+    });
     
-    const filteredElements = [];
-    
-    for (let i = 0; i < scoredElements.length; i++) {
-      let shouldAdd = true;
+    if (allCandidates.length === 0) {
+      const textHeavyElements = Array.from(document.body.querySelectorAll('div, article, section, main'))
+        .filter(el => el.textContent.trim().length > 500)
+        .sort((a, b) => b.textContent.length - a.textContent.length);
       
-      for (let j = 0; j < filteredElements.length; j++) {
-        if (filteredElements[j].element.contains(scoredElements[i].element)) {
-          shouldAdd = false;
-          break;
-        }
+      if (textHeavyElements.length > 0) {
+        return textHeavyElements[0];
       }
       
-      for (let j = i + 1; j < scoredElements.length; j++) {
-        if (scoredElements[i].element.contains(scoredElements[j].element) &&
-            scoredElements[j].score > scoredElements[i].score * 1.5) {
-          shouldAdd = false;
-          break;
-        }
-      }
-      
-      if (shouldAdd) {
-        filteredElements.push(scoredElements[i]);
-      }
+      return null;
     }
     
-    let mainContentElement = filteredElements.length > 0 ? filteredElements[0].element.cloneNode(true) : null;
+    allCandidates.sort((a, b) => {
+      if (Math.abs(b.totalScore - a.totalScore) < 50) {
+        return a.depth - b.depth;
+      }
+      return b.totalScore - a.totalScore;
+    });
     
+    return allCandidates[0].element;
+  };
+
+  const selectElementText = (element) => {
+    window.getSelection().removeAllRanges();
+
+    const range = document.createRange();
+    range.selectNodeContents(element);
+
+    const selection = window.getSelection();
+    selection.addRange(range);
+  };
+  
+  const extractMainText = () => {
+    let mainContentElement = findMainContent();
+
     if (!mainContentElement) {
-      return 'No main content detected.';
+      return '';
     }
-    
-    const finalCleanupSelectors = [
-      '.social-share', '.author-bio', '.timestamp', '.published-date', '.modified-date',
-      '.rating', '.votes', '.like', '.dislike', '.comment-count', '.view-count',
-      '.tags', '.categories', '.taxonomy', '.terms',
-      '.edit', '.print', '.email', '.bookmark', '.save',
-      'select', 'button', 'input'
-    ];
-    
-    finalCleanupSelectors.forEach(selector => {
-      try {
-        mainContentElement.querySelectorAll(selector).forEach(el => el.remove());
-      } catch (e) {
-        // Ignore Error and Continue
-      }
-    });
-    
-    const headings = Array.from(mainContentElement.querySelectorAll('h1, h2, h3, h4, h5, h6'));
-    const paragraphs = Array.from(mainContentElement.querySelectorAll('p'));
-    let lists = Array.from(mainContentElement.querySelectorAll('ul, ol'));
-    
-    const validParagraphs = paragraphs.filter(p => p.textContent.trim().length > 30);
-    const validLists = lists.filter(l => l.textContent.trim().length > 60);
-    
-    let mainTitle = '';
-    const potentialTitles = [
-      document.querySelector('h1'),
-      document.querySelector('article h1'),
-      document.querySelector('main h1'),
-      document.querySelector('[role="main"] h1'),
-      document.querySelector('article header h1'),
-      document.querySelector('.article-title'),
-      document.querySelector('.entry-title'),
-      document.querySelector('.post-title')
-    ].filter(Boolean);
-    
-    if (potentialTitles.length > 0) {
-      mainTitle = potentialTitles[0].textContent.trim();
-    }
-    
-    let formattedContent = '';
-    
-    if (mainTitle) {
-      formattedContent += `# ${mainTitle}\n\n`;
-    }
-    
-    if (validParagraphs.length > 0) {
-      formattedContent += `${validParagraphs[0].textContent.trim()}\n\n`;
-      validParagraphs[0].dataset.processed = 'true';
-    }
-    
-    headings.forEach(heading => {
-      const headingText = heading.textContent.trim();
-      if (!headingText || headingText.length < 2) return;
-      
-      const level = parseInt(heading.tagName.substring(1));
-      formattedContent += `\n${'#'.repeat(level)} ${headingText}\n\n`;
-      
-      let currentElement = heading.nextElementSibling;
-      while (currentElement) {
-        if (/^H[1-6]$/.test(currentElement.tagName)) {
-          break;
-        }
-        
-        if (currentElement.tagName === 'P' && currentElement.textContent.trim().length > 30 && !currentElement.dataset.processed) {
-          formattedContent += `${currentElement.textContent.trim()}\n\n`;
-          currentElement.dataset.processed = 'true';
-        }
-        
-        if ((currentElement.tagName === 'UL' || currentElement.tagName === 'OL') && currentElement.textContent.trim().length > 60) {
-          const listItems = Array.from(currentElement.querySelectorAll('li'))
-            .map(li => `• ${li.textContent.trim()}`)
-            .join('\n');
-          formattedContent += `${listItems}\n\n`;
-        }
-        
-        currentElement = currentElement.nextElementSibling;
-      }
-    });
-    
-    validParagraphs
-      .filter(p => !p.dataset.processed)
-      .forEach(p => {
-        formattedContent += `${p.textContent.trim()}\n\n`;
-      });
-    
-    return formattedContent.trim() || 'No main content detected.';
+
+    selectElementText(mainContentElement);
+
+    return mainContentElement.innerText.trim() || '';
   };
 
   browser.runtime.onMessage.addListener(async (request) => {
     if (request.action === 'saveSelectedText') {
-      const selectedText = window.getSelection().toString();
-      const contentText = selectedText ? selectedText : extractMainText();
-      // error handling and show alert dialog here with null text ...
+      const selectedText = window.getSelection().toString().trim();
+
+      if (!selectedText) {
+        const contentConfirmString = request.labelStrings.contentConfirm || 'No text selected. Save the main content?';
+        const contentConfirm = confirm(contentConfirmString);
+        if (!contentConfirm) {
+          return;
+        }
+      }
+
+      const contentText = selectedText || extractMainText();
+      
+      if (!contentText) {
+        const onErrorString = request.labelStrings.onError || 'The content couldn’t be found. Select it manually and try again.';
+        alert(onErrorString);
+        return;
+      }
       
       const blob = new Blob([contentText], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
-      const defaultFilename = request.name ? request.name : 'TextDrop';
+      const defaultFilename = request.name || 'TextDrop';
       const pageTitle = await getPageTitle(defaultFilename);
       const sanitizePageTitle = sanitizeFileName(pageTitle, defaultFilename);
       const timestamp = getCurrentTimestamp();
