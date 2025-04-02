@@ -4,7 +4,7 @@
         "description": "The display name for the extension."
     },
     "extension_description": {
-        "message": "Quickly save text content from the web as a file.",
+        "message": "Αποθηκεύστε γρήγορα περιεχόμενο κειμένου από τον ιστό ως αρχείο.",
         "description": "Description of what the extension does."
     }
 }

@@ -4,7 +4,7 @@
         "description": "The display name for the extension."
     },
     "extension_description": {
-        "message": "Quickly save text content from the web as a file.",
+        "message": "Web'den metin içeriğini hızlıca dosya olarak kaydedin.",
         "description": "Description of what the extension does."
     }
 }
