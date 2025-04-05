@@ -24,6 +24,11 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 
 ## Version History
 
+### 1.1 - 2025-04-05
+
+- Improved main content detection accuracy
+- Added support for all languages in the App Store
+
 ### 1.0
 
 #### **iOS/iPadOS** - 2025-04-02
