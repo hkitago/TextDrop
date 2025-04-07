@@ -24,6 +24,10 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 
 ## Version History
 
+### 1.1.1 - 2025-04-07
+
+- Fixed Support URL for better access.
+
 ### 1.1 - 2025-04-05
 
 - Improved main content detection accuracy
@@ -53,6 +57,12 @@ This project is open-source and available under the [MIT License](LICENSE). Feel
 You can reach me via [email](mailto:hkitago@icloud.com?subject=Support%20for%20TextDrop).
 
 ## Additional Information
+
+### Development Story
+
+To explore real-world use cases and scenarios where this extension can be applied, check out the [development story blog post](https://hkitago.com/2025/04/textdrop-dev-story/).
+
+This post highlights practical examples and showcases how the extension can be effectively used, including integration with generative AI.
 
 ### Related Links
 
