@@ -98,16 +98,22 @@
       
       const evaluateNode = (node, depth = 0) => {
         if (depth > 5) return;
-        
+
         let textContent = '';
         let textNodesCount = 0;
         let meaningfulTextNodes = 0;
-        
+        let linkTextLength = 0;
+        let totalTextLength = 0;
+
+        const linkElements = node.querySelectorAll('a');
+        const linkCount = linkElements.length;
+
         const walkTextNodes = (element) => {
           if (element.nodeType === Node.TEXT_NODE) {
             const text = element.textContent.trim();
             if (text.length > 0) {
               textContent += text + ' ';
+              totalTextLength += text.length;
               textNodesCount++;
               if (text.length > 15) {
                 meaningfulTextNodes++;
@@ -118,21 +124,28 @@
             if (['script', 'style', 'nav', 'header', 'footer'].includes(tagName)) {
               return;
             }
-            
+            if (tagName === 'a') {
+              const linkText = element.textContent.trim();
+              linkTextLength += linkText.length;
+            }
             for (let i = 0; i < element.childNodes.length; i++) {
               walkTextNodes(element.childNodes[i]);
             }
           }
         };
-        
+
         walkTextNodes(node);
-        
+
+        const linkTextRatio = totalTextLength > 0 ? linkTextLength / totalTextLength : 0;
+        const linkDensityScore = linkCount * 10 + linkTextRatio * 100;
+        const linkPenalty = linkTextRatio > 0.3 || linkCount > 5 ? 100 : 0;
+
         const directParagraphs = Array.from(node.children)
           .filter(child => child.tagName.toLowerCase() === 'p' && child.textContent.trim().length > 30);
-          
+
         let maxConsecutiveParagraphs = 0;
         let currentConsecutive = 0;
-        
+
         Array.from(node.children).forEach(child => {
           if (child.tagName.toLowerCase() === 'p' && child.textContent.trim().length > 30) {
             currentConsecutive++;
@@ -141,16 +154,21 @@
             currentConsecutive = 0;
           }
         });
-        
+
         const textDensity = textContent.length / (node.innerHTML.length || 1);
         const textScore = textContent.length * 0.1;
         const textNodesScore = meaningfulTextNodes * 10;
-        
         const paragraphScore = directParagraphs.length * 15;
         const consecutiveScore = maxConsecutiveParagraphs * 25;
-        
-        const totalScore = paragraphScore + consecutiveScore + textScore + textNodesScore;
-        
+
+        const totalScore =
+          paragraphScore +
+          consecutiveScore +
+          textScore +
+          textNodesScore -
+          linkDensityScore -
+          linkPenalty;
+
         if (textContent.length > 100 || directParagraphs.length > 0) {
           candidates.push({
             element: node,
@@ -163,7 +181,7 @@
             depth: getElementDepth(node)
           });
         }
-        
+
         Array.from(node.children).forEach(child => evaluateNode(child, depth + 1));
       };
       
