@@ -119,7 +119,6 @@
               return;
             }
             
-            // 子要素を処理
             for (let i = 0; i < element.childNodes.length; i++) {
               walkTextNodes(element.childNodes[i]);
             }
@@ -252,7 +251,8 @@
         return;
       }
       
-      const blob = new Blob([contentText], { type: 'text/plain' });
+      const encoding = document.characterSet || 'UTF-8';
+      const blob = new Blob([contentText], { type: `text/plain;charset=${encoding.toUpperCase()}` });
       const url = URL.createObjectURL(blob);
       const defaultFilename = request.name || 'TextDrop';
       const pageTitle = await getPageTitle(defaultFilename);
