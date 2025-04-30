@@ -24,9 +24,14 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 
 ## Version History
 
+### 1.2 - 2025-04-25
+
+- Fixed text encoding issue
+- Improved main content detection accuracy
+
 ### 1.1.1 - 2025-04-07
 
-- Fixed Support URL for better access.
+- Fixed Support URL for better access
 
 ### 1.1 - 2025-04-05
 
