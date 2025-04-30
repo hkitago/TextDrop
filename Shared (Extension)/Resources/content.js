@@ -286,11 +286,44 @@
       document.documentElement.appendChild(a);
       a.click();
 
+      // Fallback to avoid Monitoring Script
+      let downloadStarted = false;
+
+      a.addEventListener('click', () => {
+        downloadStarted = true;
+      });
+
+      setTimeout(() => {
+        if (!downloadStarted) {
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = 'about:blank';
+          document.body.appendChild(iframe);
+
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+          const iframeA = iframeDoc.createElement('a');
+          iframeA.href = url;
+          iframeA.download = filename;
+          iframeA.style.display = 'none';
+
+          iframeDoc.documentElement.appendChild(iframeA);
+          iframeA.click();
+
+          setTimeout(() => {
+            iframe.remove();
+            if (!downloadStarted) {
+              URL.revokeObjectURL(url);
+            }
+          }, 500);
+        }
+      }, 100);
+
       setTimeout(() => {
         a.remove();
         URL.revokeObjectURL(url);
       }, 500);
     }
+    
     return true;
   });
 })();
