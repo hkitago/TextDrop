@@ -300,37 +300,30 @@
       document.documentElement.appendChild(a);
       a.click();
 
-      // Fallback to avoid Monitoring Script
-      let downloadStarted = false;
-
-      a.addEventListener('click', () => {
-        downloadStarted = true;
-      });
+      // Download is triggered via both A and IFRAME elements without branching.
+      // This avoids issues with Safari's inconsistent behavior and site-specific monitoring scripts.
+      // Only one dialog will appear in practice; this setup improves reliability across devices.
 
       setTimeout(() => {
-        if (!downloadStarted) {
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.src = 'about:blank';
-          document.body.appendChild(iframe);
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = 'about:blank';
+        document.body.appendChild(iframe);
 
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-          const iframeA = iframeDoc.createElement('a');
-          iframeA.href = url;
-          iframeA.download = filename;
-          iframeA.style.display = 'none';
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        const iframeA = iframeDoc.createElement('a');
+        iframeA.href = url;
+        iframeA.download = filename;
+        iframeA.style.display = 'none';
 
-          iframeDoc.documentElement.appendChild(iframeA);
-          iframeA.click();
+        iframeDoc.documentElement.appendChild(iframeA);
+        iframeA.click();
 
-          setTimeout(() => {
-            iframe.remove();
-            if (!downloadStarted) {
-              URL.revokeObjectURL(url);
-            }
-          }, 500);
-        }
-      }, 100);
+        setTimeout(() => {
+          iframe.remove();
+          URL.revokeObjectURL(url);
+        }, 500);
+      }, 0);
 
       setTimeout(() => {
         a.remove();
