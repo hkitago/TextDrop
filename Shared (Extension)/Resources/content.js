@@ -270,7 +270,21 @@
       }
       
       const encoding = document.characterSet || 'UTF-8';
-      const blob = new Blob([contentText], { type: `text/plain;charset=${encoding.toUpperCase()}` });
+      let blob;
+      try {
+        if (typeof contentText === 'string') {
+          const encoder = new TextEncoder();
+          const utf8Array = encoder.encode(contentText);
+          blob = new Blob([utf8Array], { type: 'text/plain;charset=UTF-8' });
+        } else if (contentText instanceof ArrayBuffer || contentText instanceof Uint8Array) {
+          blob = new Blob([contentText], { type: `text/plain;charset=${encoding.toUpperCase()}` });
+        } else {
+          blob = new Blob([String(contentText)], { type: 'text/plain;charset=UTF-8' });
+        }
+      } catch (e) {
+        blob = new Blob([contentText], { type: 'text/plain' });
+      }
+
       const url = URL.createObjectURL(blob);
       const defaultFilename = request.name || 'TextDrop';
       const pageTitle = await getPageTitle(defaultFilename);
