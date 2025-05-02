@@ -10,7 +10,7 @@ browser.runtime.onInstalled.addListener(async () => {
   }
 });
 
-export const isMacOS = () => {
+const isMacOS = () => {
   const isPlatformMac = navigator.platform.toLowerCase().indexOf('mac') !== -1;
 
   const isUserAgentMac = /Mac/.test(navigator.userAgent) &&
