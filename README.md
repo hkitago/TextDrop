@@ -24,6 +24,14 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 
 ## Version History
 
+### 1.2.2 - 2025-05-02
+
+- Resolved an issue that could trigger duplicate download dialogs.
+
+### 1.2.1 - 2025-05-01
+
+- Improved download reliability on sites with restrictions or special protections
+
 ### 1.2 - 2025-04-25
 
 - Fixed text encoding issue
