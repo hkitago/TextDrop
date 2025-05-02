@@ -1,4 +1,14 @@
 (() => {
+  const isMacOS = () => {
+    const isPlatformMac = navigator.platform.toLowerCase().indexOf('mac') !== -1;
+
+    const isUserAgentMac = /Mac/.test(navigator.userAgent) &&
+                           !/iPhone/.test(navigator.userAgent) &&
+                           !/iPad/.test(navigator.userAgent);
+
+    return (isPlatformMac || isUserAgentMac) && !('ontouchend' in document);
+  };
+
   const getPageTitle = async (defaultFilename) => {
     let pageTitle = document.title;
     if (pageTitle) return pageTitle;
@@ -296,9 +306,12 @@
       a.href = url;
       a.download = filename;
       a.style.display = 'none';
-
+      
       document.documentElement.appendChild(a);
-      a.click();
+      
+      if (!isMacOS()) {
+        a.click();
+      }
 
       // Download is triggered via both A and IFRAME elements without branching.
       // This avoids issues with Safari's inconsistent behavior and site-specific monitoring scripts.
