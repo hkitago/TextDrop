@@ -258,6 +258,77 @@
 
     return mainContentElement.innerText.trim() || '';
   };
+  
+  // For Youtube Transcription
+  const clickTranscriptButton = () => {
+    const container = document.querySelector('#button-container');
+    const button = container?.querySelector('button');
+    if (button) {
+      button.click();
+      waitForTranscriptAndExtract();
+    } else {
+      return '';
+    }
+  };
+
+  const extractTranscriptText = () => {
+    const container = document.querySelector('#segments-container');
+    const segments = container?.querySelectorAll('yt-formatted-string.segment-text');
+    if (!segments || segments.length === 0) {
+      return '';
+    }
+
+    const texts = Array.from(segments).map(el => el.textContent.trim());
+    const fullTranscript = texts.join(' ');
+
+    return fullTranscript;
+  };
+
+  const waitForTranscriptAndExtract = (resolve, retry = 10) => {
+    const container = document.querySelector('#segments-container');
+    if (container) {
+      const segments = container.querySelectorAll('yt-formatted-string.segment-text');
+      const texts = Array.from(segments).map(el => el.textContent.trim());
+      const fullTranscript = texts.join(' ');
+      resolve(fullTranscript);
+    } else if (retry > 0) {
+      setTimeout(() => waitForTranscriptAndExtract(resolve, retry - 1), 1000);
+    } else {
+      resolve('');
+    }
+  };
+
+  const waitForTranscriptButtonAndClick = () => {
+    return new Promise((resolve, reject) => {
+      const tryClick = () => {
+        const container = document.querySelector('#button-container');
+        const button = container?.querySelector('button');
+
+        if (button) {
+          button.click();
+          waitForTranscriptAndExtract(resolve);
+          return true;
+        }
+
+        return false;
+      };
+
+      if (tryClick()) return;
+
+      const observer = new MutationObserver((_, obs) => {
+        if (tryClick()) {
+          obs.disconnect();
+        }
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      setTimeout(() => {
+        observer.disconnect();
+        reject(new Error('Transcript button not found'));
+      }, 3000);
+    });
+  };
 
   browser.runtime.onMessage.addListener(async (request) => {
     if (request.action === 'saveSelectedText') {
@@ -270,8 +341,21 @@
           return;
         }
       }
+      
+      const hostname = window.location.hostname;
+      let contentText = '';
 
-      const contentText = selectedText || extractMainText();
+      if (isMacOS() && (hostname.includes('youtube.com') || hostname.includes('youtu.be'))) {
+        try {
+          contentText = await waitForTranscriptButtonAndClick();
+        } catch (err) {
+          console.warn('Error to get transcription:', err);
+        }
+      }
+      
+      if (!contentText) {
+        contentText = selectedText || extractMainText();
+      }
       
       if (!contentText) {
         const onErrorString = request.labelStrings.onError || 'The content couldn’t be found. Select it manually and try again.';
