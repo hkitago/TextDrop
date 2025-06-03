@@ -24,9 +24,15 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 
 ## Version History
 
+### 1.2.3
+
+#### **macOS** - 2025-06-03
+
+- Added support for automatically extracting transcripts from YouTube videos when no text is selected
+
 ### 1.2.2 - 2025-05-02
 
-- Resolved an issue that could trigger duplicate download dialogs.
+- Resolved an issue that could trigger duplicate download dialogs
 
 ### 1.2.1 - 2025-05-01
 
