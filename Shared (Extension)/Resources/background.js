@@ -52,3 +52,36 @@ if (isMacOS()) {
     }
   });
 }
+
+browser.runtime.onMessage.addListener(async (request) => {
+  if (request.action === 'createBlobTab') {
+    const contentText = request.text;
+    const encoding = request.encoding || 'UTF-8';
+    const fileName = request.filename || `${getCurrentLangLabelString('contextMenu')}`;
+
+    let blob;
+    try {
+      if (typeof contentText === 'string') {
+        const encoder = new TextEncoder();
+        const utf8Array = encoder.encode(contentText);
+        blob = new Blob([utf8Array], { type: 'text/plain;charset=UTF-8' });
+      } else if (contentText instanceof ArrayBuffer || contentText instanceof Uint8Array) {
+        blob = new Blob([contentText], { type: `text/plain;charset=${encoding.toUpperCase()}` });
+      } else {
+        blob = new Blob([String(contentText)], { type: 'text/plain;charset=UTF-8' });
+      }
+    } catch (error) {
+      blob = new Blob([contentText], { type: 'text/plain' });
+    }
+
+    const url = URL.createObjectURL(blob);
+    const safeURL = browser.runtime.getURL(
+      `download.html?u=${encodeURIComponent(url)}&n=${encodeURIComponent(fileName)}`
+    );
+
+    browser.tabs.create({ url: safeURL }).catch((error) => {
+      console.error('Failed to create tab:', error);
+      URL.revokeObjectURL(url);
+    });
+  }
+});

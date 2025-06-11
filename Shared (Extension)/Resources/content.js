@@ -330,11 +330,39 @@
     });
   };
 
+  const detectSandboxMode = () => {
+    try {
+      const d = document.domain;
+      if (d) document.domain = d;
+    } catch {
+      return true;
+    }
+    
+    try {
+      document.cookie = 'sbx=1;max-age=60';
+      if (!document.cookie.includes('sbx=1')) {
+        return true;
+      }
+      document.cookie = 'sbx=;max-age=0';
+    } catch {
+      return true;
+    }
+    
+    try {
+      void window.top.location.href;
+    } catch {
+      return true;
+    }
+    
+    return false;
+  };
+  
   browser.runtime.onMessage.addListener(async (request) => {
     if (request.action === 'saveSelectedText') {
+      const isSandboxedPage = detectSandboxMode();
       const selectedText = window.getSelection().toString().trim();
 
-      if (!selectedText) {
+      if (!selectedText && isSandboxedPage === false) {
         const contentConfirmString = request.labelStrings.contentConfirm || 'No text selected. Save the main content?';
         const contentConfirm = confirm(contentConfirmString);
         if (!contentConfirm) {
@@ -348,8 +376,8 @@
       if (isMacOS() && (hostname.includes('youtube.com') || hostname.includes('youtu.be'))) {
         try {
           contentText = await waitForTranscriptButtonAndClick();
-        } catch (err) {
-          console.warn('Error to get transcription:', err);
+        } catch (error) {
+          console.warn('Error to get transcription:', error);
         }
       }
       
@@ -357,7 +385,7 @@
         contentText = selectedText || extractMainText();
       }
       
-      if (!contentText) {
+      if (!contentText && isSandboxedPage === false) {
         const onErrorString = request.labelStrings.onError || 'The content couldn’t be found. Select it manually and try again.';
         alert(onErrorString);
         return;
@@ -375,7 +403,7 @@
         } else {
           blob = new Blob([String(contentText)], { type: 'text/plain;charset=UTF-8' });
         }
-      } catch (e) {
+      } catch (error) {
         blob = new Blob([contentText], { type: 'text/plain' });
       }
 
@@ -392,6 +420,17 @@
       a.style.display = 'none';
       
       document.documentElement.appendChild(a);
+      
+      if (isSandboxedPage === true) {
+        browser.runtime.sendMessage({
+          action: 'createBlobTab',
+          text: contentText,
+          encoding: encoding,
+          filename: filename
+        });
+        
+        return;
+      }
       
       if (!isMacOS()) {
         a.click();
@@ -420,7 +459,7 @@
           iframe.remove();
           URL.revokeObjectURL(url);
         }, 500);
-      }, 0);
+      }, 300);
 
       setTimeout(() => {
         a.remove();

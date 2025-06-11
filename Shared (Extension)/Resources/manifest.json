@@ -4,7 +4,7 @@
 
     "name": "__MSG_extension_name__",
     "description": "__MSG_extension_description__",
-    "version": "1.2.3",
+    "version": "1.2.4",
 
     "icons": {
       "48": "images/icon.svg",
@@ -24,6 +24,17 @@
 
     "action": {
         "default_icon": "images/toolbar-icon.svg"
+    },
+
+    "web_accessible_resources": [
+      {
+        "resources": ["download.html", "download.js"],
+        "matches": ["<all_urls>"]
+      }
+    ],
+
+    "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self';"
     },
 
     "permissions": [ "activeTab", "tabs", "contextMenus" ]
