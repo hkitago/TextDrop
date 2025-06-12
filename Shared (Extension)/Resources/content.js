@@ -357,9 +357,61 @@
     return false;
   };
   
+  /**
+   * Detects if Real User Monitoring (RUM) scripts are present that may interfere
+   * with programmatic file downloads using anchor element click() method.
+   *
+   * @returns {boolean} True if RUM scripts that interfere with downloads are detected
+   */
+  const hasDownloadInterferingRUM = () => {
+    const currentHostname = window.location.hostname.toLowerCase();
+    const pageContent = document.documentElement.innerHTML.toLowerCase();
+    
+    const interferingRUMIdentifiers = [
+      'newrelic',        // New Relic RUM service
+      'nr-data',         // New Relic data collection domain
+      'bam.nr-data',     // New Relic Browser Agent Monitor
+      'nrwrapper',       // New Relic function wrapper
+      'nreum',           // New Relic End User Monitoring
+      
+      // Datadog RUM (potential interference)
+//      'datadoghq',       // Datadog service domain
+//      'dd_rum',          // Datadog RUM identifier
+//      'ddrum',           // Datadog RUM short form
+      
+      // Dynatrace RUM (potential interference)
+//      'dynatrace',       // Dynatrace service
+//      'dtrum',           // Dynatrace RUM API
+//      'ruxit',           // Legacy Dynatrace identifier
+      
+      // Elastic APM RUM (potential interference)
+//      'elastic-apm',     // Elastic APM identifier
+//      'apm-rum',         // Elastic APM RUM
+      
+      // AppDynamics (potential interference)
+//      'appdynamics',     // AppDynamics service
+//      'adrum',           // AppDynamics RUM
+      
+      // Splunk RUM (potential interference)
+//      'splunk-rum',      // Splunk RUM
+//      'signalfx',        // SignalFx (acquired by Splunk)
+      
+      // Other common RUM services
+//      'hotjar',          // Hotjar session recording
+//      'fullstory',       // FullStory session replay
+//      'logrocket'        // LogRocket session replay
+    ];
+    
+    return interferingRUMIdentifiers.some(identifier =>
+      currentHostname.includes(identifier) || pageContent.includes(identifier)
+    );
+  };
+  
   browser.runtime.onMessage.addListener(async (request) => {
     if (request.action === 'saveSelectedText') {
       const isSandboxedPage = detectSandboxMode();
+      const isRUMPage = hasDownloadInterferingRUM();
+      
       const selectedText = window.getSelection().toString().trim();
 
       if (!selectedText && isSandboxedPage === false) {
@@ -432,41 +484,35 @@
         return;
       }
       
-      if (!isMacOS()) {
+      if (!isMacOS() && isRUMPage === false) {
         a.click();
-      }
-
-      // Download is triggered via both A and IFRAME elements without branching.
-      // This avoids issues with Safari's inconsistent behavior and site-specific monitoring scripts.
-      // Only one dialog will appear in practice; this setup improves reliability across devices.
-
-      setTimeout(() => {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = 'about:blank';
-        document.body.appendChild(iframe);
-
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        const iframeA = iframeDoc.createElement('a');
-        iframeA.href = url;
-        iframeA.download = filename;
-        iframeA.style.display = 'none';
-
-        iframeDoc.documentElement.appendChild(iframeA);
-        iframeA.click();
-
+        
         setTimeout(() => {
-          iframe.remove();
+          a.remove();
           URL.revokeObjectURL(url);
         }, 500);
-      }, 300);
+        
+        return;
+      }
+      
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = 'about:blank';
+      document.body.appendChild(iframe);
+
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      const iframeA = iframeDoc.createElement('a');
+      iframeA.href = url;
+      iframeA.download = filename;
+      iframeA.style.display = 'none';
+
+      iframeDoc.documentElement.appendChild(iframeA);
+      iframeA.click();
 
       setTimeout(() => {
-        a.remove();
+        iframe.remove();
         URL.revokeObjectURL(url);
       }, 500);
     }
-    
-    return true;
   });
 })();
