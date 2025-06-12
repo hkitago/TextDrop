@@ -22,7 +22,21 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 3. Click the extension icon next to the address bar, or on macOS, use the "TextDrop" command from the context menu.
 4. Depending on your website settings, you may need to approve a file download prompt. Save the text file to your preferred location.
 
+> [!NOTE]
+> For certain pages with download restrictions, clicking the extension button will open a new tab with platform-specific behavior:
+> 
+> **[macOS]**  
+> A download permission prompt will appear. Please allow the download immediately, as this tab will automatically close after approximately 5 seconds. You will return to the original tab once it closes.
+> 
+> **[iOS/iPadOS]**  
+> The extracted text will be displayed. Select the text, tap "Share," then choose "Save to Files" from the share menu to save it to your desired location. Additionally, depending on the type of restrictions, the "View" button may not appear in the download prompt due to browser implementation differences.
+
 ## Version History
+
+### 1.2.4
+
+- Fixed an issue where the extension didn't respond on sandboxed pages
+- Improved the detection of monitoring scripts on certain sites that caused duplicate download dialogs—a problem that wasn't fully resolved in the previous update
 
 ### 1.2.3
 
