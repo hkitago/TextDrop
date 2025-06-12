@@ -33,7 +33,7 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 
 ## Version History
 
-### 1.2.4
+### 1.2.4 - 2025-06-13
 
 - Fixed an issue where the extension didn't respond on sandboxed pages
 - Improved the detection of monitoring scripts on certain sites that caused duplicate download dialogs—a problem that wasn't fully resolved in the previous update
