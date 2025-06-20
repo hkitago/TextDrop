@@ -92,7 +92,10 @@
 
   const findMainContent = () => {
     const viewportHeight = window.innerHeight;
-    const tallContainers = Array.from(document.body.querySelectorAll('div, article, section, main, td'))
+    
+    const tallContainers = Array.from(
+      document.querySelectorAll('body, div, article, section, main, td, p')
+    )
       .map(el => {
         const rect = el.getBoundingClientRect();
         return {
@@ -100,7 +103,7 @@
           height: rect.height
         };
       })
-      .filter(item => item.height > viewportHeight * 0.5)
+      .filter(item => item.height > viewportHeight * 0.3) // Lowered threshold for more flexibility
       .sort((a, b) => b.height - a.height);
 
     const evaluateContainer = (container) => {
@@ -202,7 +205,7 @@
     const getElementDepth = (element) => {
       let depth = 0;
       let current = element;
-      while (current !== document.body && current.parentElement) {
+      while (current !== document.documentElement && current.parentElement) {
         depth++;
         current = current.parentElement;
       }
@@ -216,15 +219,17 @@
     });
     
     if (allCandidates.length === 0) {
-      const textHeavyElements = Array.from(document.body.querySelectorAll('div, article, section, main'))
-        .filter(el => el.textContent.trim().length > 500)
+      const textHeavyElements = Array.from(
+        document.querySelectorAll('body, div, article, section, main, p')
+      )
+        .filter(el => el.textContent.trim().length > 200) // Lowered threshold
         .sort((a, b) => b.textContent.length - a.textContent.length);
       
       if (textHeavyElements.length > 0) {
         return textHeavyElements[0];
       }
       
-      return null;
+      return document.body;
     }
     
     allCandidates.sort((a, b) => {
