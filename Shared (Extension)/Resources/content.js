@@ -259,7 +259,9 @@
       return '';
     }
 
-    selectElementText(mainContentElement);
+    setTimeout(() => {
+      selectElementText(mainContentElement);
+    }, 1);
 
     return mainContentElement.innerText.trim() || '';
   };
@@ -368,7 +370,7 @@
    *
    * @returns {boolean} True if RUM scripts that interfere with downloads are detected
    */
-  const hasDownloadInterferingRUM = () => {
+  const detectRUM = () => {
     const currentHostname = window.location.hostname.toLowerCase();
     const pageContent = document.documentElement.innerHTML.toLowerCase();
     
@@ -415,7 +417,7 @@
   browser.runtime.onMessage.addListener(async (request) => {
     if (request.action === 'saveSelectedText') {
       const isSandboxedPage = detectSandboxMode();
-      const isRUMPage = hasDownloadInterferingRUM();
+      const isRUMPage = detectRUM();
       
       const selectedText = window.getSelection().toString().trim();
 
@@ -470,13 +472,6 @@
       const sanitizePageTitle = sanitizeFileName(pageTitle, defaultFilename);
       const timestamp = getCurrentTimestamp();
       const filename = `${sanitizePageTitle}_${timestamp}.txt`;
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.style.display = 'none';
-      
-      document.documentElement.appendChild(a);
       
       if (isSandboxedPage === true) {
         browser.runtime.sendMessage({
@@ -489,33 +484,39 @@
         return;
       }
       
-      if (!isMacOS() && isRUMPage === false) {
-        a.click();
-        
+      if (isRUMPage === true) {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = 'about:blank';
+        document.body.appendChild(iframe);
+
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        const iframeA = iframeDoc.createElement('a');
+        iframeA.href = url;
+        iframeA.download = filename;
+        iframeA.style.display = 'none';
+
+        iframeDoc.documentElement.appendChild(iframeA);
+        iframeA.click();
+
         setTimeout(() => {
-          a.remove();
+          iframe.remove();
           URL.revokeObjectURL(url);
         }, 500);
-        
+
         return;
       }
       
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = 'about:blank';
-      document.body.appendChild(iframe);
-
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-      const iframeA = iframeDoc.createElement('a');
-      iframeA.href = url;
-      iframeA.download = filename;
-      iframeA.style.display = 'none';
-
-      iframeDoc.documentElement.appendChild(iframeA);
-      iframeA.click();
-
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      
+      document.documentElement.appendChild(a);
+      a.click();
+      
       setTimeout(() => {
-        iframe.remove();
+        a.remove();
         URL.revokeObjectURL(url);
       }, 500);
     }
