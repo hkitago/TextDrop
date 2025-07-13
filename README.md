@@ -33,6 +33,13 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 
 ## Version History
 
+### 1.2.5
+
+#### **macOS** - 2025-07-13
+
+- Fixed an issue where downloads failed on pages with security restrictions (CSP)
+- Improved stability when selecting content automatically
+
 ### 1.2.4 - 2025-06-13
 
 - Fixed an issue where the extension didn't respond on sandboxed pages
