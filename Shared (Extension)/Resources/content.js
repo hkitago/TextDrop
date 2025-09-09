@@ -39,7 +39,7 @@
 
       return pageTitle;
     } catch (error) {
-      console.error('Failed to get page title:', error);
+      console.warn('Failed to get page title:', error);
       return defaultFilename;
     }
   };
@@ -182,14 +182,24 @@
         }
       });
 
-      if (maxRepeatedClass > 3) { // Lowered threshold for fome forums
-        const repeatedContainers = document.querySelectorAll(`.${repeatedClassName.replace(/\s+/g, '.')}`);
-        const hasForumFeatures = Array.from(repeatedContainers).some(container =>
-          container.querySelectorAll('button, a[href*="#"], a[href*="reply"], a[href*="vote"], [data-comment-id], [data-post-id], [class*="vote"], [class*="comment"], [class*="comtr"]').length > 1 // Lowered to 1, added Hacker News selectors
-        );
-        if (hasForumFeatures) {
-          // console.log(`Detected forum type via repeated containers (class: ${repeatedClassName}, count: ${maxRepeatedClass}) with interactive elements`);
-          return 'forum';
+      if (maxRepeatedClass > 3) { // Lowered threshold for some forums
+        if (repeatedClassName.trim()) {
+          const classes = repeatedClassName.split(/\s+/).map(cls => CSS.escape(cls)); // Escape for special chars
+          const selector = '.' + classes.join('.');
+          
+          try {
+            const repeatedContainers = document.querySelectorAll(selector);
+            
+            const hasForumFeatures = Array.from(repeatedContainers).some(container =>
+              container.querySelectorAll('button, a[href*="#"], a[href*="reply"], a[href*="vote"], [data-comment-id], [data-post-id], [class*="vote"], [class*="comment"], [class*="comtr"]').length > 1 // Lowered to 1, added Hacker News selectors
+            );
+            if (hasForumFeatures) {
+              // console.warn(`Detected forum type via repeated containers (class: ${repeatedClassName}, count: ${maxRepeatedClass}) with interactive elements`);
+              return 'forum';
+            }
+          } catch (error) {
+            console.warn('Error in querySelectorAll for repeated containers:', error.message, 'Selector:', selector);
+          }
         }
       }
 
