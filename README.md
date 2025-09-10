@@ -18,7 +18,7 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 ## Usage
 
 1. Load a web page.
-2. Select the text on the web page you wish to save. This step is optional if selecting large amounts of text feels cumbersome.
+2. Select the text on the web page you wish to save. This step is optional as advanced auto-detection intelligently identifies content types (articles, forum discussions, YouTube transcripts) and extracts the relevant text automatically, saving you from manually selecting complex threaded conversations or lengthy video transcriptions.
 3. Click the extension icon next to the address bar, or on macOS, use the "TextDrop" command from the context menu.
 4. Depending on your website settings, you may need to approve a file download prompt. Save the text file to your preferred location.
 
@@ -33,7 +33,13 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 
 ## Version History
 
-### 1.2.5
+### 1.2.6 - 2025-09-10
+
+- Improved content detection by excluding hidden elements for a more accurate experience
+- Enhanced support for detecting text and forum pages to better identify relevant content
+- Fixed an issue where YouTube transcripts were incorrectly prioritized over selected text as comments, ensuring accurate content downloads
+
+### 1.2.5 - 2025-07-16
 
 - Fixed an issue where downloads failed on pages with security restrictions (CSP)
 - Improved stability when selecting content automatically
