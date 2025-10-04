@@ -22,6 +22,9 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 3. Click the extension icon next to the address bar, or on macOS, use the "TextDrop" command from the context menu.
 4. Depending on your website settings, you may need to approve a file download prompt. Save the text file to your preferred location.
 
+> [!IMPORTANT]
+> On rare occasions in iOS, the button leading to the download file may disappear. If this happens, tap the address bar, then close that view to return. The toolbar icon will reappear, and you can access the download from there.
+
 > [!NOTE]
 > For certain pages with download restrictions, clicking the extension button will open a new tab with platform-specific behavior:
 > 
@@ -32,6 +35,10 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 > The extracted text will be displayed. Select the text, tap "Share," then choose "Save to Files" from the share menu to save it to your desired location. Additionally, depending on the type of restrictions, the "View" button may not appear in the download prompt due to browser implementation differences.
 
 ## Version History
+
+### 1.2.7 - 2025-10-10
+
+- Updated for the latest OS with new user interface and theme-optimized icons
 
 ### 1.2.6 - 2025-09-10
 
