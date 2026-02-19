@@ -1,15 +1,5 @@
 import { getCurrentLangLabelString } from './localization.js';
 
-browser.runtime.onInstalled.addListener(async () => {
-  const tabs = await browser.tabs.query({});
-
-  for (const tab of tabs) {
-    if (tab.url.startsWith('http') || tab.url.startsWith('https')) {
-      await browser.tabs.reload(tab.id);
-    }
-  }
-});
-
 const isMacOS = () => {
   const isPlatformMac = navigator.platform.toLowerCase().indexOf('mac') !== -1;
 
