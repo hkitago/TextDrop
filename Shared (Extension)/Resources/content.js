@@ -94,6 +94,7 @@
 
   const findMainContent = () => {
     const viewportHeight = window.innerHeight;
+    const visibilityCache = new WeakMap();
 
     // Page type detection
     const getPageType = () => {
@@ -256,14 +257,31 @@
         return false;
       }
 
+      const cached = visibilityCache.get(element);
+      if (typeof cached === 'boolean') {
+        return cached;
+      }
+
       let current = element;
       while (current && current !== document.documentElement) {
+        const currentCached = visibilityCache.get(current);
+        if (typeof currentCached === 'boolean') {
+          visibilityCache.set(element, currentCached);
+          return currentCached;
+        }
+
         const computedStyle = window.getComputedStyle(current);
-        if (computedStyle.display === 'none') return false;
-        if (computedStyle.visibility === 'hidden') return false;
-        if (computedStyle.opacity === '0') return false;
+        if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden' || computedStyle.opacity === '0') {
+          visibilityCache.set(current, false);
+          visibilityCache.set(element, false);
+          return false;
+        }
+
+        visibilityCache.set(current, true);
         current = current.parentElement;
       }
+
+      visibilityCache.set(element, true);
       return true;
     };
 
