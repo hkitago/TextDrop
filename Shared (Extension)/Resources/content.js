@@ -59,6 +59,13 @@
       .normalize('NFKC')
       .slice(0, maxLength);
 
+    // Safari (macOS) filename hardening for download attribute handling.
+    if (isMacOS) {
+      sanitized = sanitized
+        .replace(/['"%\\\/:]/g, '_')
+        .replace(/\s+/g, '_');
+    }
+
     if (reservedNames.test(sanitized)) {
       sanitized = '_' + sanitized;
     }
@@ -69,7 +76,7 @@
 
     return sanitized;
   };
-  
+
   const getCurrentTimestamp = () => {
     const now = new Date();
     const langCode = window.navigator.language || 'en-US';
@@ -309,8 +316,7 @@
         if (depth > 5) return;
         if (!isElementVisible(node)) return;
 
-        let textContent = '';
-        let textNodesCount = 0;
+        let textLength = 0;
         let meaningfulTextNodes = 0;
         let linkTextLength = 0;
         let totalTextLength = 0;
@@ -322,9 +328,8 @@
           if (element.nodeType === Node.TEXT_NODE) {
             const text = element.textContent.trim();
             if (text.length > 0) {
-              textContent += text + ' ';
+              textLength += text.length + 1;
               totalTextLength += text.length;
-              textNodesCount++;
               if (text.length > 15) {
                 meaningfulTextNodes++;
               }
@@ -370,8 +375,8 @@
           }
         });
 
-        const textDensity = textContent.length / (node.innerHTML.length || 1);
-        const textScore = textContent.length * config.textScore;
+        const textDensity = textLength / (node.innerHTML.length || 1);
+        const textScore = textLength * config.textScore;
         const textNodesScore = meaningfulTextNodes * config.textNodesScore;
         const paragraphScore = directParagraphs.length * config.paragraphScore;
         const consecutiveScore = maxConsecutiveParagraphs * config.consecutiveScore;
@@ -384,12 +389,12 @@
           linkDensityScore -
           linkPenalty;
 
-        if (textContent.length > config.minTextLength || directParagraphs.length > 0) {
+        if (textLength > config.minTextLength || directParagraphs.length > 0) {
           candidates.push({
             element: node,
             totalParagraphs: directParagraphs.length,
             maxConsecutiveParagraphs,
-            textLength: textContent.length,
+            textLength,
             meaningfulTextNodes,
             textDensity,
             totalScore,
@@ -731,7 +736,7 @@
 
         return;
       }
-      
+
       const a = document.createElement('a');
       a.href = url;
       a.download = filename;
