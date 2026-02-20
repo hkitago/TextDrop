@@ -1,13 +1,15 @@
 (() => {
-  const isMacOS = () => {
-    const isPlatformMac = navigator.platform.toLowerCase().indexOf('mac') !== -1;
+  const userAgent = navigator.userAgent;
+  const platform = navigator.platform;
+  const maxTouchPoints = navigator.maxTouchPoints || 0;
 
-    const isUserAgentMac = /Mac/.test(navigator.userAgent) &&
-                           !/iPhone/.test(navigator.userAgent) &&
-                           !/iPad/.test(navigator.userAgent);
+  const isIPadOS = platform === 'MacIntel' && maxTouchPoints > 1;
+  const isIOS = /iPhone|iPod/.test(userAgent);
+  const isMacOS = platform.includes('Mac') && !isIPadOS;
 
-    return (isPlatformMac || isUserAgentMac) && !('ontouchend' in document);
-  };
+  const DOWNLOAD_CLEANUP_DELAY_MS = 500;
+  const DEFAULT_TEXT_MIME = 'text/plain;charset=UTF-8';
+  const IOS_DOWNLOAD_MIME = 'application/octet-stream';
 
   const getPageTitle = async (defaultFilename) => {
     let pageTitle = document.title;
@@ -619,7 +621,7 @@
       let contentText = '';
 
       const hostname = window.location.hostname;
-      if (!selectedText && (isMacOS() && (hostname.includes('youtube.com') || hostname.includes('youtu.be')))) {
+      if (!selectedText && (isMacOS && (hostname.includes('youtube.com') || hostname.includes('youtu.be')))) {
         try {
           contentText = await waitForTranscriptButtonAndClick();
         } catch (error) {
@@ -638,19 +640,20 @@
       }
       
       const encoding = document.characterSet || 'UTF-8';
+      const blobMimeType = isIOS ? IOS_DOWNLOAD_MIME : `text/plain;charset=${encoding.toUpperCase()}`;
       let blob;
       try {
         if (typeof contentText === 'string') {
           const encoder = new TextEncoder();
           const utf8Array = encoder.encode(contentText);
-          blob = new Blob([utf8Array], { type: 'text/plain;charset=UTF-8' });
+          blob = new Blob([utf8Array], { type: blobMimeType });
         } else if (contentText instanceof ArrayBuffer || contentText instanceof Uint8Array) {
-          blob = new Blob([contentText], { type: `text/plain;charset=${encoding.toUpperCase()}` });
+          blob = new Blob([contentText], { type: blobMimeType });
         } else {
-          blob = new Blob([String(contentText)], { type: 'text/plain;charset=UTF-8' });
+          blob = new Blob([String(contentText)], { type: blobMimeType });
         }
       } catch (error) {
-        blob = new Blob([contentText], { type: 'text/plain' });
+        blob = new Blob([contentText], { type: isIOSFamily() ? IOS_DOWNLOAD_MIME : DEFAULT_TEXT_MIME });
       }
 
       const url = URL.createObjectURL(blob);
@@ -689,7 +692,7 @@
         setTimeout(() => {
           iframe.remove();
           URL.revokeObjectURL(url);
-        }, 500);
+        }, DOWNLOAD_CLEANUP_DELAY_MS);
 
         return;
       }
@@ -705,7 +708,7 @@
       setTimeout(() => {
         a.remove();
         URL.revokeObjectURL(url);
-      }, 500);
+      }, DOWNLOAD_CLEANUP_DELAY_MS);
     }
   });
 })();
