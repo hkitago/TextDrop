@@ -561,7 +561,6 @@
    */
   const detectRUM = () => {
     const currentHostname = window.location.hostname.toLowerCase();
-    const pageContent = document.documentElement.innerHTML.toLowerCase();
     
     const interferingRUMIdentifiers = [
       'newrelic',        // New Relic RUM service
@@ -598,9 +597,26 @@
 //      'logrocket'        // LogRocket session replay
     ];
     
-    return interferingRUMIdentifiers.some(identifier =>
-      currentHostname.includes(identifier) || pageContent.includes(identifier)
+    if (interferingRUMIdentifiers.some(identifier => currentHostname.includes(identifier))) {
+      return true;
+    }
+
+    const scriptElements = Array.from(document.scripts || []);
+    for (const script of scriptElements) {
+      const src = (script.src || '').toLowerCase();
+      if (interferingRUMIdentifiers.some(identifier => src.includes(identifier))) {
+        return true;
+      }
+    }
+
+    const markerMeta = document.querySelector(
+      'meta[name*="newrelic" i], meta[content*="newrelic" i], meta[name*="nreum" i], meta[content*="nreum" i]'
     );
+    if (markerMeta) {
+      return true;
+    }
+
+    return false;
   };
   
   browser.runtime.onMessage.addListener(async (request) => {
@@ -640,23 +656,6 @@
       }
       
       const encoding = document.characterSet || 'UTF-8';
-      const blobMimeType = isIOS ? IOS_DOWNLOAD_MIME : `text/plain;charset=${encoding.toUpperCase()}`;
-      let blob;
-      try {
-        if (typeof contentText === 'string') {
-          const encoder = new TextEncoder();
-          const utf8Array = encoder.encode(contentText);
-          blob = new Blob([utf8Array], { type: blobMimeType });
-        } else if (contentText instanceof ArrayBuffer || contentText instanceof Uint8Array) {
-          blob = new Blob([contentText], { type: blobMimeType });
-        } else {
-          blob = new Blob([String(contentText)], { type: blobMimeType });
-        }
-      } catch (error) {
-        blob = new Blob([contentText], { type: isIOSFamily() ? IOS_DOWNLOAD_MIME : DEFAULT_TEXT_MIME });
-      }
-
-      const url = URL.createObjectURL(blob);
       const defaultFilename = request.name || 'TextDrop';
       const pageTitle = await getPageTitle(defaultFilename);
       const sanitizePageTitle = sanitizeFileName(pageTitle, defaultFilename);
@@ -673,6 +672,24 @@
         
         return;
       }
+
+      const blobMimeType = isIOS ? IOS_DOWNLOAD_MIME : `text/plain;charset=${encoding.toUpperCase()}`;
+      let blob;
+      try {
+        if (typeof contentText === 'string') {
+          const encoder = new TextEncoder();
+          const utf8Array = encoder.encode(contentText);
+          blob = new Blob([utf8Array], { type: blobMimeType });
+        } else if (contentText instanceof ArrayBuffer || contentText instanceof Uint8Array) {
+          blob = new Blob([contentText], { type: blobMimeType });
+        } else {
+          blob = new Blob([String(contentText)], { type: blobMimeType });
+        }
+      } catch (error) {
+        blob = new Blob([contentText], { type: isIOS ? IOS_DOWNLOAD_MIME : DEFAULT_TEXT_MIME });
+      }
+
+      const url = URL.createObjectURL(blob);
       
       if (isRUMPage === true) {
         const iframe = document.createElement('iframe');
