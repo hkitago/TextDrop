@@ -10,6 +10,36 @@
   const DOWNLOAD_CLEANUP_DELAY_MS = 500;
   const DEFAULT_TEXT_MIME = 'text/plain;charset=UTF-8';
   const IOS_DOWNLOAD_MIME = 'application/octet-stream';
+  const FORUM_HOSTNAMES = [
+    'reddit.com',
+    'stackoverflow.com',
+    'stackexchange.com',
+    'news.ycombinator.com',
+    'quora.com',
+    '4chan.org',
+    '5ch.net',
+    'tieba.baidu.com',
+    'kin.naver.com',
+    'gutefrage.net',
+    'commentcamarche.net',
+    'support.mozilla.org',
+    'wordpress.org',
+    'discussions.apple.com',
+    'answers.microsoft.com'
+  ];
+  const FORUM_PATH_PATTERNS = [
+    /\/forum(\/|$)/i,
+    /\/q(?:a|anda)(\/|$)/i,
+    /\/discussion(\/|$)/i,
+    /\/r\/[^/]+(\/|$)/i,
+    /\/questions?(\/|$)/i,
+    /\/threads?(\/|$)/i,
+    /\/item\/\d+$/i,
+    /\/t\/\d+/i,
+    /\/c\/[^/]+(\/|$)/i,
+    /\/board\/[^/]+/i,
+    /\/thread\/\d+/i
+  ];
 
   const getPageTitle = async (defaultFilename) => {
     let pageTitle = document.title;
@@ -102,6 +132,8 @@
   const findMainContent = () => {
     const viewportHeight = window.innerHeight;
     const visibilityCache = new WeakMap();
+    const MAX_TALL_CONTAINERS = 80;
+    const MAX_EVALUATED_NODES_PER_CONTAINER = 1200;
 
     // Page type detection
     const getPageType = () => {
@@ -116,41 +148,9 @@
         return 'reading';
       }
 
-      const forumHostnames = [
-        'reddit.com',
-        'stackoverflow.com',
-        'stackexchange.com',
-        'news.ycombinator.com',
-        'quora.com',
-        '4chan.org',
-        '5ch.net',
-        'tieba.baidu.com',
-        'kin.naver.com',
-        'gutefrage.net',
-        'commentcamarche.net',
-        'support.mozilla.org',
-        'wordpress.org',
-        'discussions.apple.com',
-        'answers.microsoft.com'
-      ];
-
-      const forumPathPatterns = [
-        /\/forum(\/|$)/i,
-        /\/q(?:a|anda)(\/|$)/i,
-        /\/discussion(\/|$)/i,
-        /\/r\/[^/]+(\/|$)/i,
-        /\/questions?(\/|$)/i,
-        /\/threads?(\/|$)/i,
-        /\/item\/\d+$/i,
-        /\/t\/\d+/i,              // Discourse topic
-        /\/c\/[^/]+(\/|$)/i,      // Discourse category
-        /\/board\/[^/]+/i,
-        /\/thread\/\d+/i
-      ];
-
       const isForumUrl = (
-        forumHostnames.some(host => url.hostname.includes(host)) ||
-        forumPathPatterns.some(pattern => pattern.test(url.pathname))
+        FORUM_HOSTNAMES.some(host => url.hostname.includes(host)) ||
+        FORUM_PATH_PATTERNS.some(pattern => pattern.test(url.pathname))
       );
 
       if (isForumUrl) {
@@ -293,6 +293,17 @@
     };
 
     const getVisibleTallContainers = () => {
+      const semanticRoots = Array.from(document.querySelectorAll('article, main, [role="main"]'))
+        .filter(el => isElementVisible(el))
+        .map(el => ({ element: el, height: el.getBoundingClientRect().height }))
+        .filter(item => item.height > viewportHeight * config.viewportHeightRatio);
+
+      if (semanticRoots.length > 0) {
+        return semanticRoots
+          .sort((a, b) => b.height - a.height)
+          .slice(0, MAX_TALL_CONTAINERS);
+      }
+
       return Array.from(
         document.querySelectorAll('body, div, article, section, main, td, p, table') // Added table for some webpages have old structure
       )
@@ -304,17 +315,22 @@
             height: rect.height
           };
         })
-        .filter(item => item.height > viewportHeight * config.viewportHeightRatio);
+        .filter(item => item.height > viewportHeight * config.viewportHeightRatio)
+        .sort((a, b) => b.height - a.height)
+        .slice(0, MAX_TALL_CONTAINERS);
     };
 
     const tallContainers = getVisibleTallContainers();
 
     const evaluateContainer = (container) => {
       const candidates = [];
+      let evaluatedNodesCount = 0;
 
       const evaluateNode = (node, depth = 0) => {
         if (depth > 5) return;
+        if (evaluatedNodesCount >= MAX_EVALUATED_NODES_PER_CONTAINER) return;
         if (!isElementVisible(node)) return;
+        evaluatedNodesCount++;
 
         let textLength = 0;
         let meaningfulTextNodes = 0;
