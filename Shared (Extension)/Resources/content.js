@@ -129,6 +129,73 @@
     return `${dateTime.year}${dateTime.month}${dateTime.day}${dateTime.hour}${dateTime.minute}${dateTime.second}`;
   };
 
+  // ========================================
+  // Metadata Footer Helpers
+  // ========================================
+  const TRACKING_PARAM_KEYS = new Set([
+    'fbclid',
+    'gclid',
+    'dclid',
+    'msclkid',
+    'mc_cid',
+    'mc_eid',
+    'igshid',
+    'ref',
+    'ref_src',
+    'spm'
+  ]);
+
+  const TRACKING_PARAM_PREFIXES = [
+    'utm_'
+  ];
+
+  const sanitizeSourceUrlForMetadata = (urlString) => {
+    try {
+      const url = new URL(urlString);
+      url.hash = '';
+
+      const keysToDelete = [];
+      for (const key of url.searchParams.keys()) {
+        const keyLower = key.toLowerCase();
+        const isTrackingKey = TRACKING_PARAM_KEYS.has(keyLower);
+        const isTrackingPrefix = TRACKING_PARAM_PREFIXES.some(prefix => keyLower.startsWith(prefix));
+        if (isTrackingKey || isTrackingPrefix) {
+          keysToDelete.push(key);
+        }
+      }
+
+      keysToDelete.forEach(key => url.searchParams.delete(key));
+      return url.toString();
+    } catch {
+      return String(urlString || '').split('#')[0];
+    }
+  };
+
+  const appendSourceMetadataFooter = (bodyText, pageTitle, sourceUrl) => {
+    const normalizedBody = String(bodyText || '').replace(/\s+$/g, '');
+    const normalizedTitle = String(pageTitle || '').replace(/\s+/g, ' ').trim();
+    const sanitizedSourceUrl = sanitizeSourceUrlForMetadata(sourceUrl);
+    const langCode = window.navigator.language || 'en-US';
+    const capturedAt = new Intl.DateTimeFormat(langCode, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(new Date());
+
+    const metadataBlock = [
+      '--- Source Metadata ---',
+      `Page-Title: ${normalizedTitle}`,
+      `Source-URL: ${sanitizedSourceUrl}`,
+      `Captured-At: ${capturedAt}`
+    ].join('\n');
+
+    return `${normalizedBody}\n\n${metadataBlock}\n`;
+  };
+
   const findMainContent = () => {
     const viewportHeight = window.innerHeight;
     const visibilityCache = new WeakMap();
@@ -700,6 +767,7 @@
       const sanitizePageTitle = sanitizeFileName(pageTitle, defaultFilename);
       const timestamp = getCurrentTimestamp();
       const filename = `${sanitizePageTitle}_${timestamp}.txt`;
+      contentText = appendSourceMetadataFooter(contentText, pageTitle, window.location.href);
       
       if (isSandboxedPage === true) {
         browser.runtime.sendMessage({
