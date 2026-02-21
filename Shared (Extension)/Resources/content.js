@@ -562,37 +562,171 @@
   };
   
   // For Youtube Transcription
+  const TRANSCRIPT_LABEL_KEYWORDS = [
+    // English
+    'transcript',
+    'transcription',
+    // Arabic
+    'النص',
+    'التفريغ',
+    // Catalan
+    'transcripcio',
+    'transcripció',
+    // Czech / Slovak
+    'prepis',
+    'přepis',
+    // Danish / Norwegian / Swedish
+    'transskription',
+    'transkripsjon',
+    'transkribering',
+    // German
+    'transkript',
+    // Greek
+    'μεταγραφή',
+    // Spanish
+    'transcripcion',
+    'transcripción',
+    // Finnish
+    'litterointi',
+    // French
+    'transcription',
+    // Hebrew
+    'תמלול',
+    // Hindi
+    'ट्रांसक्रिप्ट',
+    // Croatian
+    'prijepis',
+    // Hungarian
+    'atirat',
+    'átirat',
+    // Indonesian / Malay
+    'transkrip',
+    // Italian
+    'trascrizione',
+    // Japanese
+    '文字起こし',
+    // Korean
+    '스크립트',
+    '대본',
+    // Dutch
+    'transcriptie',
+    // Polish
+    'transkrypcja',
+    // Portuguese
+    'transcricao',
+    'transcrição',
+    // Romanian
+    'transcriere',
+    // Russian
+    'транскрипт',
+    'расшифровка',
+    // Thai
+    'การถอดเสียง',
+    // Turkish
+    'döküm',
+    'transkript',
+    // Ukrainian
+    'стенограма',
+    'транскрипт',
+    // Vietnamese
+    'bản chép lời',
+    'ban chep loi',
+    // Chinese (Simplified / Traditional)
+    '文字稿',
+    '逐字稿',
+    '显示文字稿',
+    '顯示文字稿',
+    '文字记录',
+    '文字紀錄',
+    '转录',
+    '轉錄'
+  ].map((keyword) => keyword.toLowerCase().normalize('NFKC'));
+
+  const normalizeTranscriptLabel = (value = '') => {
+    return String(value)
+      .toLowerCase()
+      .normalize('NFKC')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  const isTranscriptButtonByLabel = (button) => {
+    if (!button) {
+      return false;
+    }
+
+    const ariaLabel = button.getAttribute('aria-label') || '';
+    const title = button.getAttribute('title') || '';
+    const text = button.textContent || '';
+    const combinedLabel = normalizeTranscriptLabel(`${ariaLabel} ${title} ${text}`);
+
+    if (!combinedLabel) {
+      return false;
+    }
+
+    return TRANSCRIPT_LABEL_KEYWORDS.some((keyword) => combinedLabel.includes(keyword));
+  };
+
+ const findTranscriptButton = () => {
+   const selectorCandidates = [
+     'ytd-video-description-transcript-section-renderer button',
+     '#primary-button button',
+     '#button-container button',
+     'button[aria-label]',
+     'button[title]'
+   ];
+
+   for (const selector of selectorCandidates) {
+     const buttons = document.querySelectorAll(selector);
+     for (const button of buttons) {
+       if (isTranscriptButtonByLabel(button)) {
+         return button;
+       }
+     }
+   }
+
+   return null;
+ };
+
+  const extractTranscriptFromSegments = (root = document) => {
+    const segmentTexts = root.querySelectorAll(
+      '#segments-container ytd-transcript-segment-renderer yt-formatted-string.segment-text'
+    );
+    if (!segmentTexts || segmentTexts.length === 0) {
+      return '';
+    }
+
+    return Array.from(segmentTexts)
+      .map((el) => (el.textContent || '').trim())
+      .filter(Boolean)
+      .join(' ');
+  };
+
   const clickTranscriptButton = () => {
-    const container = document.querySelector('#button-container');
-    const button = container?.querySelector('button');
+    const button = findTranscriptButton();
     if (button) {
       button.click();
-      waitForTranscriptAndExtract();
+      return true;
     } else {
-      return '';
+      return false;
     }
   };
 
   const extractTranscriptText = () => {
-    const container = document.querySelector('#segments-container');
-    const segments = container?.querySelectorAll('yt-formatted-string.segment-text');
-    if (!segments || segments.length === 0) {
-      return '';
-    }
-
-    const texts = Array.from(segments).map(el => el.textContent.trim());
-    const fullTranscript = texts.join(' ');
-
-    return fullTranscript;
+    return extractTranscriptFromSegments(document);
   };
 
-  const waitForTranscriptAndExtract = (resolve, retry = 10) => {
+  const waitForTranscriptAndExtract = (resolve = () => {}, retry = 10) => {
     const container = document.querySelector('#segments-container');
     if (container) {
-      const segments = container.querySelectorAll('yt-formatted-string.segment-text');
-      const texts = Array.from(segments).map(el => el.textContent.trim());
-      const fullTranscript = texts.join(' ');
-      resolve(fullTranscript);
+      const fullTranscript = extractTranscriptFromSegments(container);
+      if (fullTranscript) {
+        resolve(fullTranscript);
+      } else if (retry > 0) {
+        setTimeout(() => waitForTranscriptAndExtract(resolve, retry - 1), 500);
+      } else {
+        resolve('');
+      }
     } else if (retry > 0) {
       setTimeout(() => waitForTranscriptAndExtract(resolve, retry - 1), 1000);
     } else {
@@ -603,8 +737,7 @@
   const waitForTranscriptButtonAndClick = () => {
     return new Promise((resolve, reject) => {
       const tryClick = () => {
-        const container = document.querySelector('#button-container');
-        const button = container?.querySelector('button');
+        const button = findTranscriptButton();
 
         if (button) {
           button.click();
@@ -725,15 +858,18 @@
     return false;
   };
   
-  browser.runtime.onMessage.addListener(async (request) => {
-    if (request.action === 'saveSelectedText') {
-      const isSandboxedPage = detectSandboxMode();
-      const isRUMPage = detectRUM();
-      
-      const selectedText = window.getSelection().toString().trim();
+ browser.runtime.onMessage.addListener(async (request) => {
+   if (!request || request.action !== 'saveSelectedText') {
+     return;
+   }
+
+     const isSandboxedPage = detectSandboxMode();
+     const isRUMPage = detectRUM();
+     
+     const selectedText = window.getSelection().toString().trim();
 
       if (!selectedText && isSandboxedPage === false) {
-        const contentConfirmString = request.labelStrings.contentConfirm || 'No text selected. Save the main content?';
+        const contentConfirmString = request.labelStrings?.contentConfirm || 'No text selected. Save the main content?';
         const contentConfirm = confirm(contentConfirmString);
         if (!contentConfirm) {
           return;
@@ -756,7 +892,7 @@
       }
       
       if (!contentText && isSandboxedPage === false) {
-        const onErrorString = request.labelStrings.onError || 'The content couldn’t be found. Select it manually and try again.';
+        const onErrorString = request.labelStrings?.onError || 'The content couldn’t be found. Select it manually and try again.';
         alert(onErrorString);
         return;
       }
@@ -829,10 +965,9 @@
       document.documentElement.appendChild(a);
       a.click();
       
-      setTimeout(() => {
-        a.remove();
-        URL.revokeObjectURL(url);
-      }, DOWNLOAD_CLEANUP_DELAY_MS);
-    }
-  });
+     setTimeout(() => {
+       a.remove();
+       URL.revokeObjectURL(url);
+     }, DOWNLOAD_CLEANUP_DELAY_MS);
+ });  
 })();
