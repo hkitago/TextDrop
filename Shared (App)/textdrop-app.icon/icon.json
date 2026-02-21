@@ -6,15 +6,23 @@
     {
       "layers" : [
         {
-          "glass" : false,
+          "glass" : true,
           "image-name" : "Icon-file.svg",
           "name" : "Icon-file"
         },
         {
+          "glass" : false,
           "image-name" : "Icon-downarrow.svg",
           "name" : "Icon-downarrow"
         }
       ],
+      "position" : {
+        "scale" : 0.97,
+        "translation-in-points" : [
+          4.0859375,
+          0.0546875
+        ]
+      },
       "shadow" : {
         "kind" : "neutral",
         "opacity" : 0.5
