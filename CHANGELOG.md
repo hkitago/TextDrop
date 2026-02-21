@@ -1,54 +1,60 @@
 # Changelog
 
-## [1.2.2]
-
-## **Common** - 2025-11-07
+## [1.2.7] - 2025-10-10
 
 - Updated for the latest OS with new user interface and theme-optimized icons
 
-## [1.2.1]
 
-## **Common** - 2025-04-11
+## [1.2.6] - 2025-09-10
 
-- Added support for synchronizing marks across tabs with the same URL
-- Added smooth scrolling for the marked content
+- Improved content detection by excluding hidden elements for a more accurate experience
+- Enhanced support for detecting text and forum pages to better identify relevant content
+- Fixed an issue where YouTube transcripts were incorrectly prioritized over selected text as comments, ensuring accurate content downloads
 
-## [1.2]
+## [1.2.5] - 2025-07-16
 
-## **Common** - 2025-03-05
+- Fixed an issue where downloads failed on pages with security restrictions (CSP)
+- Improved stability when selecting content automatically
 
-- Improved text matching accuracy, ensuring more precise highlight restoration when revisiting
+## [1.2.4] - 2025-06-13
 
-## [1.1.1]
+- Fixed an issue where the extension didn't respond on sandboxed pages
+- Improved the detection of monitoring scripts on certain sites that caused duplicate download dialogs—a problem that wasn't fully resolved in the previous update
 
-## **iOS/iPadOS** - 2025-02-24
+## [1.2.3]
 
-- Added support for dark mode icons
-- Improved localization by adjusting phrases in certain languages
+## **macOS** - 2025-06-03
 
-## **macOS** - 2025-02-19
+- Added support for automatically extracting transcripts from YouTube videos when no text is selected
 
-- Improve text highlighting accuracy when selecting text across multiple tags
-- Fix app names and phrasing in certain languages for localization improvements
+## [1.2.2] - 2025-05-02
 
-## [1.1]
+- Resolved an issue that could trigger duplicate download dialogs
 
-## **iOS/iPadOS** - 2025-02-18
+## [1.2.1] - 2025-05-01
 
-- Fix the bug with link sharing to ensure consistent URL handling
-- Add support for all languages in the App Store
+- Improved download reliability on sites with restrictions or special protections
 
-## **macOS** - 2025-02-09
+## [1.2] - 2025-04-25
 
-- Improve RTL text handling and resolved display issues
-- Add support for all languages in the App Store
+- Fixed text encoding issue
+- Improved main content detection accuracy
+
+## [1.1.1] - 2025-04-07
+
+- Fixed Support URL for better access
+
+## [1.1] - 2025-04-05
+
+- Improved main content detection accuracy
+- Added support for all languages in the App Store
 
 ## [1.0]
 
-## **iOS/iPadOS** - 2025-02-15
+## **iOS/iPadOS** - 2025-04-02
 
-- Initial release with the same core features as the macOS version
+- Initial release with extended features from macOS version
 
-## **macOS** - 2025-02-04
+## **macOS** - 2025-04-01
 
 - Initial release
