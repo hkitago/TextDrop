@@ -36,7 +36,7 @@ To uninstall the extension, similarly to the installation process, toggle the ex
 
 ## Latest Version
 
-### 26.1 - 2026-02-XX
+### 26.1 - 2026-02-22
 
 - Added source metadata to saved text content, making files easier to find in system search
 - Improved download handling, preventing missing download icon
